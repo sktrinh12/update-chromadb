@@ -8,7 +8,6 @@ ORG_NAME = os.getenv("AZURE_DEVOPS_ORG")
 PROJECT_NAME = os.getenv("AZURE_DEVOPS_PROJECT")
 API_BASE = f"https://dev.azure.com/{ORG_NAME}/{PROJECT_NAME}/_apis"
 API_VERSION = "7.0"
-INITIAL_EXPORT_DATE = os.getenv("INITIAL_EXPORT_DATE")
 
 PAT = os.getenv("AZURE_DEVOPS_PAT")
 if not PAT:
@@ -111,7 +110,7 @@ if __name__ == "__main__":
     print("=" * 70)
     
     # Get the sync date based on previous exports
-    since_date = INITIAL_EXPORT_DATE # get_last_sync_date()
+    since_date = os.getenv("FILTERED_DATE")
     
     # Build WIQL query with date filter
     WIQL = f"""
