@@ -30,7 +30,7 @@ jobs:
       - name: Download Chroma directory from S3
         run: |
           mkdir -p chroma
-          aws s3 sync s3://preludetx-string/chroma ./chroma
+          aws s3 sync s3://preludetx-strinh/chroma ./chroma
           ls -R chroma
 
       - name: Install dependencies
