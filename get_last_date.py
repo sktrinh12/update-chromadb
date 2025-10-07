@@ -60,8 +60,8 @@ def get_latest_modified_date():
     if latest:
         # Always print UTC ISO format
         iso_str = latest.isoformat().replace("+00:00", "Z")
-        print(iso_str)
         print(f"FILTERED_DATE={iso_str}")
+        print(iso_str)
 
 
 if __name__ == "__main__":
