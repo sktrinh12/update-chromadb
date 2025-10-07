@@ -38,8 +38,17 @@ jobs:
         with:
           name: workitems-export
           path: workitems_export_*.json
-          retention-days: 3
+          retention-days: 2
       
       - name: Show summary
         run: |
           echo "Check the artifacts tab to download the exported JSON file"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::581351078906:role/GitHubActionsS3Access
+          aws-region: us-east-1
+
+      - name: List S3 bucket contents
+        run: aws s3 ls s3://preludetx-strinh/
