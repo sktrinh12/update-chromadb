@@ -4,6 +4,10 @@ on:
   # Allow manual trigger only for testing
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   test-api:
     runs-on: ubuntu-latest
