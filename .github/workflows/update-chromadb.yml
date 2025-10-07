@@ -1,0 +1,43 @@
+name: Test Azure DevOps API Fetch
+
+on:
+  # Allow manual trigger only for testing
+  workflow_dispatch:
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install azure-devops
+      
+      - name: Test Azure DevOps API fetch
+        run: python update_embeddings.py
+        env:
+          AZURE_DEVOPS_ORG: ${{ secrets.AZURE_DEVOPS_ORG }}
+          AZURE_DEVOPS_PROJECT: ${{ secrets.AZURE_DEVOPS_PROJECT }}
+          AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+          INITIAL_EXPORT_DATE: '2025-10-02'
+      
+      - name: Upload exported JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: workitems-export
+          path: workitems_export_*.json
+          retention-days: 7
+      
+      - name: Show summary
+        run: |
+          echo "✅ API test completed!"
+          echo "Check the artifacts tab to download the exported JSON file"
