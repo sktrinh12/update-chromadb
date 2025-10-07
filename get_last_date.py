@@ -59,9 +59,9 @@ def get_latest_modified_date():
 
     if latest:
         # Always print UTC ISO format
-        print(latest.isoformat().replace("+00:00", "Z"))
-    else:
-        print("1970-01-01T00:00:00Z")  # fallback if none found
+        iso_str = latest.isoformat().replace("+00:00", "Z")
+        print(iso_str)
+        print(f"FILTERED_DATE={iso_str}")
 
 
 if __name__ == "__main__":
