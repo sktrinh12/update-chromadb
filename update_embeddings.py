@@ -190,7 +190,7 @@ if __name__ == "__main__":
     # Save to JSON (TEMP)
     output_file = f"workitems_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(formatted_items, f, indent=2, ensure_ascii=False)
+        json.dump(records, f, indent=2, ensure_ascii=False)
     
     print(f"\n✅ Exported work items to {output_file}")
 
