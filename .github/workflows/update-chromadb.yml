@@ -20,24 +20,26 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install azure-devops
+          pip install requests
       
-      - name: Test Azure DevOps API fetch
+      - name: Fetch Azure DevOps Work Items 
         run: python update_embeddings.py
         env:
           AZURE_DEVOPS_ORG: ${{ secrets.AZURE_DEVOPS_ORG }}
           AZURE_DEVOPS_PROJECT: ${{ secrets.AZURE_DEVOPS_PROJECT }}
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
-          INITIAL_EXPORT_DATE: '2025-10-02'
+          INITIAL_EXPORT_DATE: '2025-09-18'
+          AWS_REGION: us-east-1
+          S3_BUCKET: preludetx-strinh
+          CHROMA_DIR: ./chroma
       
       - name: Upload exported JSON
         uses: actions/upload-artifact@v4
         with:
           name: workitems-export
           path: workitems_export_*.json
-          retention-days: 7
+          retention-days: 3
       
       - name: Show summary
         run: |
-          echo "✅ API test completed!"
           echo "Check the artifacts tab to download the exported JSON file"
