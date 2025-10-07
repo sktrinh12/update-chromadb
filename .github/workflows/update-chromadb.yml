@@ -42,9 +42,7 @@ jobs:
       - name: Get latest modified date from Chroma
         id: getdate
         run: |
-          python get_last_date.py | tee get_last_date.log
-          FILTERED_DATE=$(cat get_last_date.log)
-          echo $FILTERED_DATE
+          FILTERED_DATE=$(python get_last_date.py | tail -n 1)
           echo "FILTERED_DATE=$FILTERED_DATE" >> $GITHUB_ENV
         env:
           CHROMA_DIR: ./chroma
