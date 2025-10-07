@@ -1,4 +1,4 @@
-name: Fetch Azure DevOps Work Items
+name: Sync Azure DevOps Work Items to Chroma
 
 on:
   # Allow manual trigger only for testing
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  test-api:
+  sync-ado:
     runs-on: ubuntu-latest
     
     steps:
@@ -21,21 +21,37 @@ jobs:
         with:
           python-version: '3.11'
       
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::581351078906:role/GitHubActionsS3Access
+          aws-region: us-east-1
+
+      - name: Download Chroma directory from S3
+        run: |
+          mkdir -p chroma
+          aws s3 sync s3://preludetx-string/chroma ./chroma
+          ls -R chroma
+
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install requests
+          pip install beautifulsoup4
       
+      - name: Get latest modified date from Chroma
+        id: getdate
+        run: echo "FILTERED_DATE=$(python get_last_date.py)" >> $GITHUB_ENV
+        env:
+          CHROMA_DIR: ./chroma
+
       - name: Fetch ADO Work Items using python
         run: python update_embeddings.py
         env:
           AZURE_DEVOPS_ORG: ${{ secrets.AZURE_DEVOPS_ORG }}
           AZURE_DEVOPS_PROJECT: ${{ secrets.AZURE_DEVOPS_PROJECT }}
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
-          INITIAL_EXPORT_DATE: '2025-09-18'
-          AWS_REGION: us-east-1
-          S3_BUCKET: preludetx-strinh
-          CHROMA_DIR: ./chroma
+          FILTERED_DATE: ${{ env.FILTERED_DATE }}
       
       - name: Upload exported JSON to records
         uses: actions/upload-artifact@v4
@@ -44,15 +60,39 @@ jobs:
           path: workitems_export_*.json
           retention-days: 2
       
-      - name: Show summary
+      - name: Find exported JSON filename
+        id: findfile
         run: |
-          echo "Check the artifacts tab to download the exported JSON file"
+          FILE=$(ls workitems_export_*.json | sort | tail -n 1)
+          echo "WORKITEMS_FILE=$FILE" >> $GITHUB_ENV
+          echo "Found file: $FILE"
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::581351078906:role/GitHubActionsS3Access
-          aws-region: us-east-1
+      - name: Clean and chunk text for embeddings
+        run: python clean_workitems.py
+        env:
+          INPUT_FILE: ${{ env.WORKITEMS_FILE }}
 
-      - name: List S3 bucket contents
-        run: aws s3 ls s3://preludetx-strinh/
+      - name: Start Chroma container and update embeddings
+        run: |
+          echo "Launching official ChromaDB container..."
+          docker run -d --name chroma_container \
+            -v ${{ github.workspace }}/chroma:/chroma \
+            -v ${{ github.workspace }}:/app \
+            -w /app \
+            chromadb/chroma:1.1.2.dev13 tail -f /dev/null
+
+          # Copy Python dependencies into the container
+          docker exec chroma_container pip install --no-cache-dir chromadb
+
+          # Run upload script inside the container
+          docker exec chroma_container python upload_chromadb.py
+
+          # Stop and remove container
+          docker stop chroma_container
+          docker rm chroma_container
+
+      - name: Upload updated Chroma directory to S3
+        run: |
+          echo "Uploading updated ChromaDB directory back to S3..."
+          aws s3 sync ./chroma s3://preludetx-string/chroma --delete
+          echo "✅ Upload complete."
