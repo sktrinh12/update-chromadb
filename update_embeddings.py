@@ -110,7 +110,7 @@ if __name__ == "__main__":
     print("=" * 70)
     
     # Get the sync date based on previous exports
-    since_date = os.getenv("FILTERED_DATE").replace("Z", "")
+    since_date = os.getenv("FILTERED_DATE")
     
     # Build WIQL query with date filter
     WIQL = f"""
