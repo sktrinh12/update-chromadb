@@ -1,4 +1,4 @@
-name: Test Azure DevOps API Fetch
+name: Fetch Azure DevOps Work Items
 
 on:
   # Allow manual trigger only for testing
@@ -22,7 +22,7 @@ jobs:
           pip install --upgrade pip
           pip install requests
       
-      - name: Fetch Azure DevOps Work Items 
+      - name: Fetch ADO Work Items using python
         run: python update_embeddings.py
         env:
           AZURE_DEVOPS_ORG: ${{ secrets.AZURE_DEVOPS_ORG }}
@@ -33,7 +33,7 @@ jobs:
           S3_BUCKET: preludetx-strinh
           CHROMA_DIR: ./chroma
       
-      - name: Upload exported JSON
+      - name: Upload exported JSON to records
         uses: actions/upload-artifact@v4
         with:
           name: workitems-export
