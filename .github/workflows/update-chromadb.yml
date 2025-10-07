@@ -42,10 +42,12 @@ jobs:
       - name: Get latest modified date from Chroma
         id: getdate
         run: |
-          FILTERED_DATE=$(python get_last_date.py | tail -n 1)
+          python get_last_date.py
+          FILTERED_DATE=$(cat filtered_date.txt)
           echo "FILTERED_DATE=$FILTERED_DATE" >> $GITHUB_ENV
         env:
           CHROMA_DIR: ./chroma
+          DATE_FILE: filtered_date.txt
 
       - name: Fetch ADO Work Items using python
         run: python update_embeddings.py

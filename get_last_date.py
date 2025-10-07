@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 CHROMA_DIR = os.getenv("CHROMA_DIR", "./chroma")
 DB_PATH = os.path.join(CHROMA_DIR, "chroma.sqlite3")
+OUTPUT_FILE = os.getenv("DATE_FILE")
 
 def parse_mixed_date(value: str):
     """
@@ -61,7 +62,8 @@ def get_latest_modified_date():
         # Always print UTC ISO format
         iso_str = latest.isoformat().replace("+00:00", "Z")
         print(f"FILTERED_DATE={iso_str}")
-        print(iso_str)
+        with open(OUTPUT_FILE, "w") as f:
+            f.write(iso_str)
 
 
 if __name__ == "__main__":
