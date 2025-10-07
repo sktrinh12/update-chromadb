@@ -8,7 +8,7 @@ ORG_NAME = os.getenv("AZURE_DEVOPS_ORG")
 PROJECT_NAME = os.getenv("AZURE_DEVOPS_PROJECT")
 API_BASE = f"https://dev.azure.com/{ORG_NAME}/{PROJECT_NAME}/_apis"
 API_VERSION = "7.0"
-INITIAL_EXPORT_DATE = os.getenv("INITIAL_EXPORT_DATE", "2025-09-18")
+INITIAL_EXPORT_DATE = os.getenv("INITIAL_EXPORT_DATE")
 
 PAT = os.getenv("AZURE_DEVOPS_PAT")
 if not PAT:
@@ -187,9 +187,12 @@ if __name__ == "__main__":
         }
         records.append(record)
 
-    # Save to JSON
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
+    # Save to JSON (TEMP)
+    output_file = f"workitems_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(output_file, 'w', encoding='utf-8') as f:
+        json.dump(formatted_items, f, indent=2, ensure_ascii=False)
+    
+    print(f"\n✅ Exported work items to {output_file}")
 
     # logic to upload newest records into chroma db
 
