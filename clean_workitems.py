@@ -271,6 +271,6 @@ def process_workitems(input_file: str, output_file: str = None) -> list:
 
 if __name__ == "__main__":
     in_path = os.getenv("WORKITEMS_FILE")
-    out_path = f"{in_path.split(".")[0]}_cleaned.json"
+    out_path = f"{in_path.split('.')[0]}_cleaned.json"
     processed = process_workitems(in_path, out_path)
     print(f"Processed {len(processed)} workitems from {out_path}")
