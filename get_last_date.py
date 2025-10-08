@@ -38,18 +38,6 @@ def parse_mixed_date(value: str):
     return None
 
 
-def wiql_safe_date(dt: datetime) -> str:
-    """
-    Convert a datetime object to WIQL-compatible ISO8601 string.
-    Removes timezone info, adds fractional seconds if missing.
-    """
-    # Make naive (drop tzinfo)
-    if dt.tzinfo is not None:
-        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
-    # Return WIQL-safe string
-    return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")
-
-
 def get_latest_modified_date():
     if not os.path.exists(DB_PATH):
         raise FileNotFoundError(f"Chroma database not found at {DB_PATH}")
@@ -71,7 +59,7 @@ def get_latest_modified_date():
             latest = dt
 
     if latest:
-        iso_str = wiql_safe_date(latest)
+        iso_str = latest.date().isoformat()
         print(f"FILTERED_DATE={iso_str}")
         with open(OUTPUT_FILE, "w") as f:
             f.write(iso_str)
