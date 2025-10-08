@@ -57,7 +57,7 @@ jobs:
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
           FILTERED_DATE: ${{ env.FILTERED_DATE }}
       
-      - name: Upload exported JSON to records
+      - name: Upload exported raw JSON to records
         uses: actions/upload-artifact@v4
         with:
           name: workitems-export
@@ -72,19 +72,31 @@ jobs:
           echo "Found file: $FILE"
 
       - name: Clean and chunk text for embeddings
-        run: python clean_workitems.py
+        run: |
+          python clean_workitems.py
+          CLEAN_FILE="${WORKITEMS_FILE%.*}_cleaned.json"
+          echo "CLEANED_FILE=$CLEAN_FILE" >> $GITHUB_ENV
+          echo "Generated cleaned file: $CLEAN_FILE"
         env:
           INPUT_FILE: ${{ env.WORKITEMS_FILE }}
 
+      - name: Upload exported cleaned JSON to records
+        uses: actions/upload-artifact@v4
+        with:
+          name: workitems-export-cleaned
+          path: workitems_export_*_cleaned.json
+          retention-days: 2
+
       - name: Start Chroma container and update embeddings
         run: |
-          echo "Launching official ChromaDB container..."
-          docker run --rm \
-            -v ${{ github.workspace }}/chroma:/chroma \
-            -v ${{ github.workspace }}:/app \
-            -w /app \
-            chromadb/chroma:1.1.2.dev13 \
-            python upload_chromadb.py
+         echo "Launching Python container with Chroma data mounted..."
+         docker run --rm \
+           -v ${{ github.workspace }}/chroma:/chroma \
+           -v ${{ github.workspace }}:/app \
+           -w /app \
+           -e INPUT_FILE=${{ env.CLEANED_FILE }} \
+           python:3.11-slim \
+           bash -c "pip install --no-cache-dir chromadb && python upload_chromadb.py"
 
       - name: Upload updated Chroma directory to S3
         run: |
