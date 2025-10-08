@@ -2,7 +2,7 @@ import sqlite3
 import os
 from datetime import datetime, timezone
 
-CHROMA_DIR = os.getenv("CHROMA_DIR", "./chroma")
+CHROMA_DIR = os.getenv("CHROMA_DIR")
 DB_PATH = os.path.join(CHROMA_DIR, "chroma.sqlite3")
 OUTPUT_FILE = os.getenv("DATE_FILE")
 
@@ -45,7 +45,7 @@ def wiql_safe_date(dt: datetime) -> str:
     """
     # Make naive (drop tzinfo)
     if dt.tzinfo is not None:
-        dt = dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
     # Return WIQL-safe string
     return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
