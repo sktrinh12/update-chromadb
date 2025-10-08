@@ -79,21 +79,12 @@ jobs:
       - name: Start Chroma container and update embeddings
         run: |
           echo "Launching official ChromaDB container..."
-          docker run -d --name chroma_container \
+          docker run --rm \
             -v ${{ github.workspace }}/chroma:/chroma \
             -v ${{ github.workspace }}:/app \
             -w /app \
-            chromadb/chroma:1.1.2.dev13 tail -f /dev/null
-
-          # Copy Python dependencies into the container
-          docker exec chroma_container pip install --no-cache-dir chromadb
-
-          # Run upload script inside the container
-          docker exec chroma_container python upload_chromadb.py
-
-          # Stop and remove container
-          docker stop chroma_container
-          docker rm chroma_container
+            chromadb/chroma:1.1.2.dev13 \
+            python upload_chromadb.py
 
       - name: Upload updated Chroma directory to S3
         run: |
