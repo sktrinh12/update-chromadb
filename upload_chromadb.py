@@ -1,4 +1,5 @@
 import json
+import os
 import chromadb
 from chromadb.utils import embedding_functions
 from collections import defaultdict
