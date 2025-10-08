@@ -121,7 +121,7 @@ if __name__ == "__main__":
     ORDER BY [System.ChangedDate] DESC
     """
     
-    print(f"\nExecuting WIQL query...")
+    print(f"\nExecuting WIQL query...\n{WIQL}")
     wiql_res = run_wiql(WIQL)
     ids = [w["id"] for w in wiql_res.get("workItems", [])]
     print(f"Found {len(ids)} work items to process")
