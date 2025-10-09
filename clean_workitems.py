@@ -265,7 +265,6 @@ def process_workitems(input_file: str, output_file: str = None) -> list:
     if output_file:
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(processed_records, f, indent=2, ensure_ascii=False)
-        print(f"Saved {len(processed_records)} cleaned records to {output_file}")
 
     return processed_records
 
