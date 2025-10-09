@@ -52,7 +52,10 @@ jobs:
           DATE_FILE: filtered_date.txt
 
       - name: Fetch ADO Work Items using python
-        run: python fetch_workitems.py
+        run: |
+          python fetch_workitems.py | tee fetch_output.log
+          NO_NEW_ITEMS=$(grep -o 'NO_NEW_ITEMS=[0-9]' fetch_output.log | cut -d'=' -f2 || echo 0)
+          echo "NO_NEW_ITEMS=$NO_NEW_ITEMS" >> $GITHUB_ENV
         env:
           AZURE_DEVOPS_ORG: ${{ secrets.AZURE_DEVOPS_ORG }}
           AZURE_DEVOPS_PROJECT: ${{ secrets.AZURE_DEVOPS_PROJECT }}
@@ -60,6 +63,7 @@ jobs:
           FILTERED_DATE: ${{ env.FILTERED_DATE }}
       
       - name: Upload exported raw JSON to records
+        if: ${{ env.NO_NEW_ITEMS == '0' }}
         uses: actions/upload-artifact@v4
         with:
           name: workitems-export
@@ -67,6 +71,7 @@ jobs:
           retention-days: 2
       
       - name: Find exported JSON filename
+        if: ${{ env.NO_NEW_ITEMS == '0' }}
         id: findfile
         run: |
           FILE=$(ls workitems_export_*.json | sort | tail -n 1)
@@ -74,6 +79,7 @@ jobs:
           echo "Raw Worklist File: $FILE"
 
       - name: Clean and chunk text for embeddings
+        if: ${{ env.NO_NEW_ITEMS == '0' }}
         run: |
           python clean_workitems.py
           CLEAN_FILE="${WORKITEMS_FILE%.*}_cleaned.json"
@@ -83,6 +89,7 @@ jobs:
           INPUT_FILE: ${{ env.WORKITEMS_FILE }}
 
       - name: Upload exported cleaned JSON to records
+        if: ${{ env.NO_NEW_ITEMS == '0' }}
         uses: actions/upload-artifact@v4
         with:
           name: workitems-export-cleaned
@@ -90,6 +97,7 @@ jobs:
           retention-days: 2
 
       - name: Start Chroma container and update embeddings
+        if: ${{ env.NO_NEW_ITEMS == '0' }}
         run: |
          echo "Launching Python container with Chroma data mounted..."
          docker run --rm \
@@ -102,7 +110,12 @@ jobs:
            bash -c "pip install --no-cache-dir chromadb && python upload_workitems.py"
 
       - name: Upload updated Chroma directory to S3
+        if: ${{ env.NO_NEW_ITEMS == '0' }}
         run: |
           echo "Uploading updated ChromaDB directory back to S3..."
           aws s3 sync ./chroma s3://${S3_BUCKET}/chroma --delete
           echo "✅ Upload complete."
+
+      - name: No new work items detected
+        if: ${{ env.NO_NEW_ITEMS == '1' }}
+        run: echo "✅ No new or modified work items found since last sync. Skipping Chroma update."
