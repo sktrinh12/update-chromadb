@@ -211,3 +211,8 @@ if __name__ == "__main__":
     print("=" * 70)
     print("Export completed successfully!")
     print("=" * 70)
+
+    if not records:
+        print("NO_NEW_ITEMS=1")
+    else:
+        print("NO_NEW_ITEMS=0")
