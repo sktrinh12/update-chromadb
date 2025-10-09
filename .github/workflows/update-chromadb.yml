@@ -11,6 +11,9 @@ permissions:
 jobs:
   sync-ado:
     runs-on: ubuntu-latest
+    env:
+      S3_BUCKET: preludetx-strinh
+      CHROMA_DIR: ./chroma
     
     steps:
       - name: Checkout repository
@@ -30,7 +33,7 @@ jobs:
       - name: Download Chroma directory from S3
         run: |
           mkdir -p chroma
-          aws s3 sync s3://preludetx-strinh/chroma ./chroma
+          aws s3 sync s3://${S3_BUCKET}/chroma ./chroma
           ls -R chroma
 
       - name: Install dependencies
@@ -46,7 +49,6 @@ jobs:
           FILTERED_DATE=$(cat filtered_date.txt)
           echo "FILTERED_DATE=$FILTERED_DATE" >> $GITHUB_ENV
         env:
-          CHROMA_DIR: ./chroma
           DATE_FILE: filtered_date.txt
 
       - name: Fetch ADO Work Items using python
@@ -69,14 +71,14 @@ jobs:
         run: |
           FILE=$(ls workitems_export_*.json | sort | tail -n 1)
           echo "WORKITEMS_FILE=$FILE" >> $GITHUB_ENV
-          echo "Found file: $FILE"
+          echo "Raw Worklist File: $FILE"
 
       - name: Clean and chunk text for embeddings
         run: |
           python clean_workitems.py
           CLEAN_FILE="${WORKITEMS_FILE%.*}_cleaned.json"
           echo "CLEANED_FILE=$CLEAN_FILE" >> $GITHUB_ENV
-          echo "Generated cleaned file: $CLEAN_FILE"
+          echo "Cleaned file: $CLEAN_FILE"
         env:
           INPUT_FILE: ${{ env.WORKITEMS_FILE }}
 
@@ -95,11 +97,12 @@ jobs:
            -v ${{ github.workspace }}:/app \
            -w /app \
            -e INPUT_FILE=${{ env.CLEANED_FILE }} \
+           -e CHROMA_DIR=${{ env.CHROMA_DIR }} \
            python:3.11-slim \
            bash -c "pip install --no-cache-dir chromadb && python upload_chromadb.py"
 
       - name: Upload updated Chroma directory to S3
         run: |
           echo "Uploading updated ChromaDB directory back to S3..."
-          aws s3 sync ./chroma s3://preludetx-string/chroma --delete
+          aws s3 sync ./chroma s3://${S3_BUCKET}/chroma --delete
           echo "✅ Upload complete."
