@@ -52,7 +52,7 @@ jobs:
           DATE_FILE: filtered_date.txt
 
       - name: Fetch ADO Work Items using python
-        run: python update_embeddings.py
+        run: python fetch_workitems.py
         env:
           AZURE_DEVOPS_ORG: ${{ secrets.AZURE_DEVOPS_ORG }}
           AZURE_DEVOPS_PROJECT: ${{ secrets.AZURE_DEVOPS_PROJECT }}
@@ -99,7 +99,7 @@ jobs:
            -e INPUT_FILE=${{ env.CLEANED_FILE }} \
            -e CHROMA_DIR=${{ env.CHROMA_DIR }} \
            python:3.11-slim \
-           bash -c "pip install --no-cache-dir chromadb && python upload_chromadb.py"
+           bash -c "pip install --no-cache-dir chromadb && python upload_workitems.py"
 
       - name: Upload updated Chroma directory to S3
         run: |
