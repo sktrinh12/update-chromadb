@@ -4,14 +4,25 @@ import chromadb
 from chromadb.utils import embedding_functions
 
 INPUT_FILE = os.getenv("INPUT_FILE")
-CHROMA_DIR = os.getenv("CHROMA_DIR")
+CHROMA_TOKEN = os.getenv('CHROMA_TOKEN')
+CHROME_HOST_NAME = os.getenv("CHROME_HOST_NAME")
+
+if not CHROMA_TOKEN:
+    raise Exception('CHROMA_TOKEN environment variable is required')
+
+
 
 def load_cleaned_data(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def main():
-    client = chromadb.PersistentClient(path=CHROMA_DIR)
+    client = chromadb.HttpClient(
+        host=CHROME_HOST_NAME,
+        headers={"Authorization": f"Bearer {CHROMA_TOKEN}"},
+        port=443,
+        ssl=True,
+    )
 
     embedding_func = embedding_functions.DefaultEmbeddingFunction()
 
