@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       S3_BUCKET: preludetx-strinh
-      CHROMA_DIR: ./chroma
-    
+      CHROMA_DIR: ${{ vars.CHROMA_DIR }}    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,27 +30,12 @@ jobs:
           role-to-assume: arn:aws:iam::581351078906:role/GitHubActionsS3Access
           aws-region: us-east-1
 
-      - name: Download Chroma directory from S3
-        run: |
-          mkdir -p chroma
-          aws s3 sync s3://${S3_BUCKET}/chroma ./chroma
-          ls -R chroma
-
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install requests
           pip install beautifulsoup4
       
-      - name: Get latest modified date from Chroma
-        id: getdate
-        run: |
-          python get_last_date.py
-          FILTERED_DATE=$(cat filtered_date.txt)
-          echo "FILTERED_DATE=$FILTERED_DATE" >> $GITHUB_ENV
-        env:
-          DATE_FILE: filtered_date.txt
-
       - name: Fetch ADO Work Items using python
         run: |
           python fetch_workitems.py | tee fetch_output.log
@@ -60,7 +45,6 @@ jobs:
           AZURE_DEVOPS_ORG: ${{ secrets.AZURE_DEVOPS_ORG }}
           AZURE_DEVOPS_PROJECT: ${{ secrets.AZURE_DEVOPS_PROJECT }}
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
-          FILTERED_DATE: ${{ env.FILTERED_DATE }}
       
       - name: Upload exported raw JSON to records
         if: ${{ env.NO_NEW_ITEMS == '0' }}
@@ -96,24 +80,11 @@ jobs:
           path: workitems_export_*_cleaned.json
           retention-days: 2
 
-      - name: Start Chroma container and update embeddings
-        if: ${{ env.NO_NEW_ITEMS == '0' }}
-        run: |
-         echo "Launching Python container with Chroma data mounted..."
-         docker run --rm \
-           -v ${{ github.workspace }}/chroma:/chroma \
-           -v ${{ github.workspace }}:/app \
-           -w /app \
-           -e INPUT_FILE=${{ env.CLEANED_FILE }} \
-           -e CHROMA_DIR=${{ env.CHROMA_DIR }} \
-           python:3.11-slim \
-           bash -c "pip install --no-cache-dir chromadb && python upload_workitems.py"
-
       - name: Upload updated Chroma directory to S3
         if: ${{ env.NO_NEW_ITEMS == '0' }}
         run: |
           echo "Uploading updated ChromaDB directory back to S3..."
-          aws s3 sync ./chroma s3://${S3_BUCKET}/chroma --delete
+          aws s3 sync ./chroma s3://${S3_BUCKET}/${CHROMA_DIR} --delete
           echo "✅ Upload complete."
 
       - name: No new work items detected
