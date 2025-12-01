@@ -23,7 +23,7 @@ MAX_IDS_PER_BATCH = 200
 def run_wiql(query: str) -> dict:
     url = f"{API_BASE}/wit/wiql?api-version={API_VERSION}"
     r = SESSION.post(url, json={"query": query})
-    r.raise_for_status()
+    r.raise_for_status() 
     return r.json()
 
 
@@ -52,7 +52,7 @@ def get_work_item_details(ids_or_id: Union[int, Iterable[int]]) -> List[dict]:
         params = {
             "ids": ",".join(map(str, chunk)),
             "$expand": "relations",
-            "api-version": API_VERSION
+            "api-version": API_VERSION,
         }
         url = f"{API_BASE}/wit/workitems"
         r = SESSION.get(url, params=params)
@@ -110,7 +110,11 @@ if __name__ == "__main__":
     print("=" * 70)
     
     # Get the sync date based on previous exports
-    since_date = os.getenv("FILTERED_DATE")
+    last_date = os.getenv("FILTERED_DATE")
+
+    # subtract a buffer window (7 days)
+    since_date = datetime.strptime(last_date, "%Y-%m-%d") - timedelta(days=7)
+    since_date = since_date.strftime("%Y-%m-%d")
     
     # Build WIQL query with date filter
     WIQL = f"""
@@ -162,11 +166,28 @@ if __name__ == "__main__":
         
         # Fetch commit details
         commit_details = [fetch_linked_commit_if_any(curl) for curl in commits]
+        wi_type = fields.get("System.WorkItemType", "")  # "Bug" or "User Story"
+
+        # Prefer normal description if it exists
+        description = fields.get("System.Description") or ""
+
+        # For Bugs (or items without description), fall back to Repro Steps + System Info
+        if not description:
+            repro = fields.get("Microsoft.VSTS.TCM.ReproSteps") or ""
+            sysinfo = fields.get("Microsoft.VSTS.TCM.SystemInfo") or ""
+            # Only build a synthetic description if there is actual content
+            bug_parts = []
+            if repro:
+                bug_parts.append(f"Repro Steps:\n{repro}")
+            if sysinfo:
+                bug_parts.append(f"System Info:\n{sysinfo}")
+            if bug_parts:
+                description = "\n\n".join(bug_parts)
 
         record = {
             "id": item_id,
             "title": fields.get("System.Title"),
-            "description": fields.get("System.Description", ""),
+            "description": description,
             "acceptance_criteria": fields.get("Microsoft.VSTS.Common.AcceptanceCriteria", ""),
             "tags": fields.get("System.Tags", ""),
             "story_points": fields.get("Microsoft.VSTS.Scheduling.StoryPoints", None),
