@@ -109,19 +109,11 @@ if __name__ == "__main__":
     print("Azure DevOps Work Items Export")
     print("=" * 70)
     
-    # Get the sync date based on previous exports
-    last_date = os.getenv("FILTERED_DATE")
-
-    # subtract a buffer window (7 days)
-    since_date = datetime.strptime(last_date, "%Y-%m-%d") - timedelta(days=7)
-    since_date = since_date.strftime("%Y-%m-%d")
-    
     # Build WIQL query with date filter
     WIQL = f"""
     SELECT [System.Id], [System.Title], [System.ChangedDate]
     FROM WorkItems
     WHERE [System.TeamProject] = '{PROJECT_NAME}'
-    AND [System.ChangedDate] >= '{since_date}'
     ORDER BY [System.ChangedDate] DESC
     """
     
@@ -131,7 +123,8 @@ if __name__ == "__main__":
     print(f"Found {len(ids)} work items to process")
 
     if not ids:
-        print("\n✓ No new work items to update. Exiting.")
+        print("\n✓ No work items found. Exiting.")
+        print("NO_NEW_ITEMS=1")
         exit(0)
 
     work_items = get_work_item_details(ids)
