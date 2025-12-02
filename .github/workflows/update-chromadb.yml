@@ -84,11 +84,11 @@ jobs:
         run: |
          echo "Launching Python container with Chroma data mounted..."
          docker run --rm \
-           -v ${{ github.workspace }}/chroma:/chroma \
+           -v ${{ github.workspace }}/${{ env.CHROMA_DIR }}:/${{ env.CHROMA_DIR }} \
            -v ${{ github.workspace }}:/app \
            -w /app \
            -e INPUT_FILE=${{ env.CLEANED_FILE }} \
-           -e CHROMA_DIR=${{ env.CHROMA_DIR }} \
+           -e CHROMA_DIR=/${{ env.CHROMA_DIR }} \
            python:3.11-slim \
            bash -c "pip install --no-cache-dir chromadb && python upload_workitems.py"
 
@@ -96,7 +96,7 @@ jobs:
         if: ${{ env.NO_NEW_ITEMS == '0' }}
         run: |
           echo "Uploading updated ChromaDB directory back to S3..."
-          aws s3 sync ./chroma s3://${S3_BUCKET}/${CHROMA_DIR} --delete
+          aws s3 sync ./${{ env.CHROMA_DIR }} s3://${S3_BUCKET}/${CHROMA_DIR} --delete
           echo "✅ Upload complete."
 
       - name: No new work items detected
