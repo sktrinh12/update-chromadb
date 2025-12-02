@@ -80,6 +80,18 @@ jobs:
           path: workitems_export_*_cleaned.json
           retention-days: 2
 
+      - name: Start Chroma container and update embeddings
+        run: |
+         echo "Launching Python container with Chroma data mounted..."
+         docker run --rm \
+           -v ${{ github.workspace }}/chroma:/chroma \
+           -v ${{ github.workspace }}:/app \
+           -w /app \
+           -e INPUT_FILE=${{ env.CLEANED_FILE }} \
+           -e CHROMA_DIR=${{ env.CHROMA_DIR }} \
+           python:3.11-slim \
+           bash -c "pip install --no-cache-dir chromadb && python upload_workitems.py"
+
       - name: Upload updated Chroma directory to S3
         if: ${{ env.NO_NEW_ITEMS == '0' }}
         run: |
